@@ -1669,7 +1669,7 @@ function renderRulesFaq() {
   box.innerHTML = "";
   state.faq.forEach((entry) => {
     const details = document.createElement("details");
-    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p style="margin:8px 0 0; color:#334155; line-height:1.7;">' + escapeHtml(entry.a) + '</p>';
+    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p class="hint" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + '</p>';
     box.appendChild(details);
   });
 }

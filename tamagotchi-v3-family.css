@@ -22,8 +22,6 @@ body {
   margin: 0 auto;
   padding: 20px;
 }
-.top-nav { margin-bottom: 10px; }
-.top-nav a { color: var(--primary); text-decoration: none; font-size: 14px; }
 .header {
   background: var(--card);
   border-radius: 12px;
@@ -843,8 +841,8 @@ summary { cursor: pointer; font-weight: 600; }
   .tab-btn {
     flex: 0 0 auto;
     white-space: nowrap;
-    padding: 6px 10px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 14px;
   }
 
   .filter-toggle-btn {
@@ -881,7 +879,7 @@ summary { cursor: pointer; font-weight: 600; }
   }
 
   .stage-adult-pair {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
 
@@ -901,8 +899,8 @@ summary { cursor: pointer; font-weight: 600; }
 
 @media (max-width: 480px) {
   .tab-btn {
-    padding: 5px 8px;
-    font-size: 12px;
+    padding: 7px 10px;
+    font-size: 13px;
   }
 
   .current-stage-actions {
