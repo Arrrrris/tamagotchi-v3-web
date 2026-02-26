@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tamagotchi Connection V3 家庭图谱记录工具</title>
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <link rel="shortcut icon" href="./favicon.png" />
+  <link rel="stylesheet" href="./tamagotchi-v3-family.css" />
+</head>
+<body>
+  <main class="wrap">
+    <div class="top-nav"><a href="./">← 返回首页</a></div>
+    <section class="header">
+      <h1>Tamagotchi Connection V3 家庭图谱记录工具</h1>
+      <p class="desc">可以在家谱图谱页登记现有的拓麻形象作为记录，资料库查阅不同的角色、食物、道具（及代码）</p>
+      <div class="tabs" id="tabs"></div>
+    </section>
+
+    <section class="panel active" id="panel-family">
+      <div class="tab1-grid">
+        <section class="card">
+          <h3>当代记录入口</h3>
+          <p class="mini">世代与奇偶根据录入顺序自动计算。幼儿/老年角色自动匹配性别</p>
+
+          <div class="row" style="margin-top:10px; margin-bottom:10px;">
+            <span class="chip" id="currentGenLabel">第 1 代</span>
+            <span class="stage-badge" id="currentStageLabel">幼儿期</span>
+            <button class="text-danger-btn" id="deleteCurrentRecordBtn" type="button">删除记录</button>
+          </div>
+
+          <div class="form-grid">
+            <label id="genderWrap">
+              本代性别（代开头填写）
+              <select id="genderInput">
+                <option value="">请选择</option>
+                <option value="boy">男孩</option>
+                <option value="girl">女孩</option>
+              </select>
+            </label>
+            <label id="spouseWrap" style="grid-column: 1 / -1; display:none;">
+              <span class="label-inline">成年期配偶 <button class="text-link-btn" id="spouseQuickPickBtn" type="button">选择配偶</button></span>
+              <p class="mini" id="spousePickedLabel" style="margin-top:6px;">当前：无</p>
+            </label>
+          </div>
+          <p class="mini" id="currentPickTitle" style="margin-top:8px;">当前阶段拓麻</p>
+          <div id="currentPickPreview" class="current-pick"></div>
+
+          <div class="row current-stage-actions" style="margin-top:10px;">
+            <button class="ghost-btn" id="prevStageBtn" type="button">上一阶段</button>
+            <button class="ghost-btn" id="saveStageBtn" type="button">保存</button>
+            <button class="primary-btn" id="nextStageBtn" type="button">下一阶段</button>
+          </div>
+          <div id="recordStatus" class="status"></div>
+        </section>
+
+        <section class="card">
+          <div class="row">
+            <div class="chips" style="gap:8px;">
+              <h3 style="margin:0;">世代时间线</h3>
+              <button class="choice-card-edit-btn" id="downloadTimelineTableBtn" type="button">下载</button>
+            </div>
+            <button class="text-danger-btn" id="resetDataBtn" type="button">清空全部记录</button>
+          </div>
+          <p class="hint" style="margin:0 0 10px;">阶段链：幼儿期 → 儿童期 → 青春期 → 成年期 → 老年期</p>
+          <div class="timeline" id="timeline"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-character">
+      <div class="library-grid">
+        <aside class="filter-card">
+          <div class="filter-head">
+            <h3 style="margin:0; font-size:15px;">筛选角色资料</h3>
+            <button class="filter-toggle-btn" id="charFilterToggleBtn" type="button" aria-expanded="false" aria-label="展开筛选"></button>
+          </div>
+          <div class="filter-content" id="charFilterContent">
+          <label style="margin-bottom:8px;">
+            奇偶世代限制
+          </label>
+          <div class="filter-tabs" id="charParityTabs">
+            <button class="mini-tab-btn" type="button" data-value="odd">Odd</button>
+            <button class="mini-tab-btn" type="button" data-value="even">Even</button>
+            <button class="mini-tab-btn" type="button" data-value="any">Any</button>
+          </div>
+          <input id="charParityFilter" type="hidden" value="" />
+          <label>
+            关键词（中/英）
+            <input id="charKeywordFilter" type="text" placeholder="如：拓麻吉 / Tamatchi" />
+          </label>
+          <label style="margin-top:10px;">
+            成长阶段
+            <select id="charStageFilter">
+              <option value="all">不限</option>
+              <option value="baby">幼儿期</option>
+              <option value="child">儿童期</option>
+              <option value="teen">青春期</option>
+              <option value="adult">成年期</option>
+              <option value="elder">老年期</option>
+            </select>
+          </label>
+          <label style="margin-top:10px;">
+            等级
+            <select id="charRankFilter">
+              <option value="all">不限</option>
+              <option value="S">S</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="any">Any</option>
+            </select>
+          </label>
+          </div>
+        </aside>
+
+        <section class="list-card">
+          <!-- <p class="hint">只读角色资料库：名称、图片、食物偏好为固定数据，后续可用你的规则表覆盖。</p> -->
+          <div class="item-list" id="characterList"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-items">
+      <div class="library-grid">
+        <aside class="filter-card">
+          <div class="filter-head">
+            <h3 style="margin:0; font-size:15px;">筛选道具</h3>
+            <button class="filter-toggle-btn" id="itemFilterToggleBtn" type="button" aria-expanded="false" aria-label="展开筛选"></button>
+          </div>
+          <div class="filter-content" id="itemFilterContent">
+          <label>
+            关键词（中/英）
+            <input id="itemKeywordFilter" type="text" placeholder="如：Boom / 宝箱" />
+          </label>
+          <label style="margin-top:12px;">
+            使用类型
+            <select id="itemUsageFilter">
+              <option value="all">全部</option>
+              <option value="single_use">一次性</option>
+              <option value="permanent">永久</option>
+              <option value="breakable">几率毁坏</option>
+            </select>
+          </label>
+          <label style="margin-top:12px;">
+            可用阶段
+            <select id="itemStageFilter">
+              <option value="all">全部</option>
+              <option value="baby">幼儿期</option>
+              <option value="child">儿童期</option>
+              <option value="teen">青春期</option>
+              <option value="adult">成年期</option>
+              <option value="elder">老年期</option>
+            </select>
+          </label>
+          <div style="margin-top:12px;">
+            <label style="margin-bottom:8px;">来源</label>
+            <div class="filter-tabs" id="itemSourceTags"></div>
+          </div>
+          </div>
+        </aside>
+
+        <section class="list-card">
+          <!-- <p class="hint">字段契约：id、name、nameZh、usageMode、usableStages、sources、codes、price、note、image。若 image 留空，会自动读取 ./item-icons/{id}.webp（回退 .png）。</p> -->
+          <div class="item-list" id="itemList"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-foods">
+      <div class="library-grid">
+        <aside class="filter-card">
+          <div class="filter-head">
+            <h3 style="margin:0; font-size:15px;">筛选食物</h3>
+            <button class="filter-toggle-btn" id="foodFilterToggleBtn" type="button" aria-expanded="false" aria-label="展开筛选"></button>
+          </div>
+          <div class="filter-content" id="foodFilterContent">
+          <label>
+            关键词（中/英）
+            <input id="foodKeywordFilter" type="text" placeholder="如：蛋包饭 / Donut" />
+          </label>
+          <label style="margin-top:12px;">
+            分类
+            <select id="foodCategoryFilter">
+              <option value="all">全部</option>
+            </select>
+          </label>
+          <div style="margin-top:12px;">
+            <label style="margin-bottom:8px;">来源</label>
+            <div class="filter-tabs" id="foodSourceTags"></div>
+          </div>
+          </div>
+        </aside>
+
+        <section class="list-card">
+          <!-- <p class="hint">字段契约：id、category、english、chinese、image、code、price、source、note。若 image 留空，会自动读取 ./food-icons/{id}.webp（回退 .png）。</p> -->
+          <div class="item-list" id="foodList"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-rules">
+      <div class="big-card">
+        <h3 style="margin-top:0;">后续内容占位（你稍后提供）</h3>
+        <p class="hint">这里改成可收起 Q&A / 大卡片形式。当前先放占位模板，收到你的内容后直接替换。</p>
+      </div>
+
+      <div class="faq-list" id="rulesFaq"></div>
+
+      <div class="big-card" style="margin-top:10px;">
+        <h3 style="margin-top:0;">你需要按顺序提供的数据</h3>
+        <ol style="margin:0; padding-left:18px; color:#334155; line-height:1.8;">
+          <li>青春期可出现角色表（区分 Odd / Even，必要时再分性别和等级）。</li>
+          <li>成年期可出现角色表（区分 Odd / Even，必要时再分性别和等级）。</li>
+          <li>幼儿期、儿童期、老年期固定角色表（若每性别不同请注明）。</li>
+          <li>每个角色的固定资料：名称、图片、喜欢食物、讨厌食物。</li>
+          <li>配偶记录展示格式（仅文本/是否需要固定候选名单）。</li>
+          <li>Tab4 最终文案：Q&A 标题和内容，或大卡片分组内容。</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-mask" id="detailModalMask">
+    <div class="modal">
+      <h3 id="modalTitle"></h3>
+      <p id="modalMeta"></p>
+      <p id="modalFoods"></p>
+      <p id="modalExtra"></p>
+      <div class="modal-foot"><button class="ghost-btn" id="closeModalBtn">关闭</button></div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="selectorModalMask">
+    <div class="modal">
+      <h3 id="selectorModalTitle"></h3>
+      <p id="selectorModalDesc" class="hint"></p>
+      <div id="selectorModalList" class="selector-grid"></div>
+      <div class="modal-foot"><button class="ghost-btn" id="closeSelectorModalBtn">关闭</button></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="./tamagotchi-v3-data-characters.js"></script>
+  <script src="./tamagotchi-v3-data-items.js"></script>
+  <script src="./tamagotchi-v3-data-foods.js"></script>
+  <script src="./tamagotchi-v3-data-faq.js"></script>
+  <script src="./tamagotchi-v3-family-main.js"></script>
+</body>
+</html>
