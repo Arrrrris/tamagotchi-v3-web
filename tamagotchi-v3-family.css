@@ -864,11 +864,11 @@ select:disabled, input:disabled { background: #f3f4f6; color: #9ca3af; }
   text-align: center;
 }
 .contact-qr {
-  width: min(320px, 100%);
+  width: calc(100% - 64px);
   border-radius: 10px;
   border: 1px solid var(--border);
   display: block;
-  margin: 8px auto 10px;
+  margin: 8px 32px 10px;
 }
 details {
   border: 1px solid var(--border);
