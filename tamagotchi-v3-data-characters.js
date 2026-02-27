@@ -19,7 +19,7 @@ const characterProfiles = [
       "玉米卷"
     ],
     "image": "./char-icons/Kuroteletchi.png",
-    "note": "中文名：男羞羞吉；睡眠：-"
+    "note": "中文名：男羞羞吉；睡眠：一小时内长大，中间会睡一次"
   },
   {
     "id": "c002",
@@ -41,7 +41,7 @@ const characterProfiles = [
       "玉米卷"
     ],
     "image": "./char-icons/Shiroteletchi.png",
-    "note": "中文名：女羞羞吉；睡眠：-"
+    "note": "中文名：女羞羞吉；睡眠：一小时内长大，中间会睡一次"
   },
   {
     "id": "c005",

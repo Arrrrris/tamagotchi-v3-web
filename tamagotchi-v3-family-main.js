@@ -140,6 +140,41 @@ function getCharacterChineseName(profile) {
   return matched ? matched[1].trim() : "";
 }
 
+function parseSleepValueFromNote(noteText) {
+  const note = String(noteText || "");
+  const matched = note.match(/睡眠[:：]\s*([^；;]+)/);
+  return matched ? matched[1].trim() : "";
+}
+
+function formatSleepClockText(value, periodLabel) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const matched = raw.match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+  if (!matched) return raw;
+  const hour24 = Number(matched[1]);
+  const minute = matched[2] ? Number(matched[2]) : 0;
+  if (!Number.isFinite(hour24) || !Number.isFinite(minute)) return raw;
+  const hour12 = hour24 % 12 || 12;
+  const minuteText = minute ? (":" + String(minute).padStart(2, "0")) : "";
+  return hour12 + minuteText + periodLabel;
+}
+
+function formatSleepDisplayText(rawSleepText) {
+  const raw = String(rawSleepText || "").trim();
+  if (!raw) return "-";
+  const matched = raw.match(/^(\d{1,2}(?:[.:]\d{1,2})?)\s*[~～-]\s*(\d{1,2}(?:[.:]\d{1,2})?)$/);
+  if (!matched) return raw;
+  const start = formatSleepClockText(matched[1], "PM");
+  const end = formatSleepClockText(matched[2], "AM");
+  if (!start || !end) return raw;
+  return start + "～" + end;
+}
+
+function getProfileSleepDisplayText(profile) {
+  const sleepText = parseSleepValueFromNote(profile && profile.note);
+  return formatSleepDisplayText(sleepText);
+}
+
 function getCharacterDisplayName(profile) {
   if (!profile) return "";
   return getCharacterChineseName(profile) || profile.name;
@@ -422,6 +457,7 @@ function renderTimelineFoodHover(profile) {
   if (!profile) return "";
   const likedFoods = resolveFoodPreferenceDetailList(profile.favoriteFoodIds, profile.favoriteFoods);
   const dislikedFoods = resolveFoodPreferenceDetailList(profile.dislikedFoodIds, profile.dislikedFoods);
+  const sleepDisplay = getProfileSleepDisplayText(profile);
 
   const toItems = (foods) => renderTimelineFoodItems(foods);
 
@@ -429,6 +465,7 @@ function renderTimelineFoodHover(profile) {
     '<div class="timeline-food-hover">' +
     '<div class="timeline-food-group"><div class="timeline-food-title">喜欢食物</div>' + toItems(likedFoods) + "</div>" +
     '<div class="timeline-food-group"><div class="timeline-food-title">讨厌食物</div>' + toItems(dislikedFoods) + "</div>" +
+    '<div class="timeline-sleep-row"><div class="timeline-food-title">睡眠时间</div><div class="timeline-sleep-value">' + escapeHtml(sleepDisplay) + "</div></div>" +
     "</div>"
   );
 }
@@ -453,10 +490,12 @@ function renderTimelineFoodPanel(profile) {
   if (!profile) return '<div class="timeline-food-empty">-</div>';
   const likedFoods = resolveFoodPreferenceDetailList(profile.favoriteFoodIds, profile.favoriteFoods);
   const dislikedFoods = resolveFoodPreferenceDetailList(profile.dislikedFoodIds, profile.dislikedFoods);
+  const sleepDisplay = getProfileSleepDisplayText(profile);
   return (
     '<div class="timeline-food-modal-body">' +
     '<div class="timeline-food-modal-group"><div class="timeline-food-title">喜欢食物</div>' + renderTimelineFoodItems(likedFoods, "timeline-food-item-modal") + "</div>" +
     '<div class="timeline-food-modal-group"><div class="timeline-food-title">讨厌食物</div>' + renderTimelineFoodItems(dislikedFoods, "timeline-food-item-modal") + "</div>" +
+    '<div class="timeline-sleep-row timeline-sleep-row-modal"><div class="timeline-food-title">睡眠时间</div><div class="timeline-sleep-value">' + escapeHtml(sleepDisplay) + "</div></div>" +
     "</div>"
   );
 }
@@ -1242,6 +1281,7 @@ function renderCharacterLibrary() {
     const rankMeta = getRankPillMeta(char.rank);
     const likedFoods = resolveFoodPreferenceList(char.favoriteFoodIds, char.favoriteFoods);
     const dislikedFoods = resolveFoodPreferenceList(char.dislikedFoodIds, char.dislikedFoods);
+    const sleepDisplay = getProfileSleepDisplayText(char);
     const toFoodRows = (title, foods) => {
       const content = foods.length
         ? foods.map((food) => {
@@ -1251,6 +1291,7 @@ function renderCharacterLibrary() {
         : '<div class="food-pref-row"><span class="food-pref-name">-</span></div>';
       return '<div class="food-pref-row"><span class="food-pref-title">' + title + '：</span><div class="food-pref-list">' + content + "</div></div>";
     };
+    const sleepRow = '<div class="food-pref-row food-pref-sleep-row"><span class="food-pref-title">睡眠时间：</span><span class="food-pref-name">' + escapeHtml(sleepDisplay) + "</span></div>";
     const card = document.createElement("article");
     card.className = "item-card";
     card.innerHTML =
@@ -1263,7 +1304,8 @@ function renderCharacterLibrary() {
       '</div>' +
       '<div class="char-meta">阶段: ' + STAGE_LABEL[char.stage] + ' ｜ 奇偶: ' + formatAnyLabel(char.parity) + "</div>" +
       toFoodRows("喜欢", likedFoods) +
-      toFoodRows("不喜欢", dislikedFoods);
+      toFoodRows("不喜欢", dislikedFoods) +
+      sleepRow;
     card.addEventListener("click", () => openProfileModal(char));
     list.appendChild(card);
   });
