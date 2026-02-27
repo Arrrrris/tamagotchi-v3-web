@@ -217,6 +217,10 @@
           <li class="hint">还有啥，我也不知道了</li>
         </ol>
       </div>
+
+      <div style="margin-top:10px; text-align:center;">
+        <button class="contact-open-btn" id="openContactModalBtn" type="button">联系我</button>
+      </div>
     </section>
   </main>
 
@@ -236,6 +240,23 @@
       <p id="selectorModalDesc" class="hint"></p>
       <div id="selectorModalList" class="selector-grid"></div>
       <div class="modal-foot"><button class="ghost-btn" id="closeSelectorModalBtn">关闭</button></div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="contactModalMask">
+    <div class="modal contact-modal">
+      <h3 style="margin-top:0;">联系我</h3>
+      <img class="contact-qr" src="./contact-qrcode.jpg" alt="联系二维码" />
+      <p class="hint">欢迎联系我提供文字资料或者提点意见bug啥的虽然我不一定有空改</p>
+      <div class="modal-foot"><button class="ghost-btn" id="closeContactModalBtn">关闭</button></div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="timelineFoodModalMask">
+    <div class="modal timeline-food-modal">
+      <h3 id="timelineFoodModalTitle" style="margin-top:0;margin-bottom:8px;">食物喜好</h3>
+      <div id="timelineFoodModalBody"></div>
+      <div class="modal-foot"><button class="ghost-btn" id="closeTimelineFoodModalBtn">关闭</button></div>
     </div>
   </div>
 

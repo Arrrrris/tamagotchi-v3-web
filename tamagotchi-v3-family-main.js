@@ -116,6 +116,16 @@ function stageOrderValue(stage) {
   return idx === -1 ? 99 : idx;
 }
 
+function rankOrderValue(rank) {
+  const raw = normalizeText(rank);
+  if (raw === "s") return 0;
+  if (raw === "a") return 1;
+  if (raw === "b") return 2;
+  if (raw === "c") return 3;
+  if (raw === "d") return 4;
+  return 5;
+}
+
 function getProfileByName(name) {
   return state.characters.find((profile) => profile.name === name) || null;
 }
@@ -413,25 +423,40 @@ function renderTimelineFoodHover(profile) {
   const likedFoods = resolveFoodPreferenceDetailList(profile.favoriteFoodIds, profile.favoriteFoods);
   const dislikedFoods = resolveFoodPreferenceDetailList(profile.dislikedFoodIds, profile.dislikedFoods);
 
-  const toItems = (foods) => {
-    if (!foods.length) return '<div class="timeline-food-empty">-</div>';
-    return foods.map((food) => {
-      const thumb = renderFoodThumbHtml(food, "thumb food-pref-thumb", "食物图", "thumb food-pref-thumb");
-      return (
-        '<div class="timeline-food-item">' +
-        thumb +
-        '<div class="timeline-food-names">' +
-        '<div class="timeline-food-zh">' + escapeHtml(food.chinese) + "</div>" +
-        '<div class="timeline-food-en">' + escapeHtml(food.english) + "</div>" +
-        "</div></div>"
-      );
-    }).join("");
-  };
+  const toItems = (foods) => renderTimelineFoodItems(foods);
 
   return (
     '<div class="timeline-food-hover">' +
     '<div class="timeline-food-group"><div class="timeline-food-title">喜欢食物</div>' + toItems(likedFoods) + "</div>" +
     '<div class="timeline-food-group"><div class="timeline-food-title">讨厌食物</div>' + toItems(dislikedFoods) + "</div>" +
+    "</div>"
+  );
+}
+
+function renderTimelineFoodItems(foods, itemClass = "") {
+  if (!foods.length) return '<div class="timeline-food-empty">-</div>';
+  return foods.map((food) => {
+    const thumb = renderFoodThumbHtml(food, "thumb food-pref-thumb", "食物图", "thumb food-pref-thumb");
+    const rowClass = itemClass ? ("timeline-food-item " + itemClass) : "timeline-food-item";
+    return (
+      '<div class="' + rowClass + '">' +
+      thumb +
+      '<div class="timeline-food-names">' +
+      '<div class="timeline-food-zh">' + escapeHtml(food.chinese) + "</div>" +
+      '<div class="timeline-food-en">' + escapeHtml(food.english) + "</div>" +
+      "</div></div>"
+    );
+  }).join("");
+}
+
+function renderTimelineFoodPanel(profile) {
+  if (!profile) return '<div class="timeline-food-empty">-</div>';
+  const likedFoods = resolveFoodPreferenceDetailList(profile.favoriteFoodIds, profile.favoriteFoods);
+  const dislikedFoods = resolveFoodPreferenceDetailList(profile.dislikedFoodIds, profile.dislikedFoods);
+  return (
+    '<div class="timeline-food-modal-body">' +
+    '<div class="timeline-food-modal-group"><div class="timeline-food-title">喜欢食物</div>' + renderTimelineFoodItems(likedFoods, "timeline-food-item-modal") + "</div>" +
+    '<div class="timeline-food-modal-group"><div class="timeline-food-title">讨厌食物</div>' + renderTimelineFoodItems(dislikedFoods, "timeline-food-item-modal") + "</div>" +
     "</div>"
   );
 }
@@ -890,6 +915,9 @@ function renderTimeline() {
         ? '<img class="stage-main-img" src="' + escapeAttr(profile.image) + '" alt="角色图" />'
         : '<div class="thumb empty stage-main-img">角色</div>';
       const foodHover = renderTimelineFoodHover(profile);
+      const foodButton = profile
+        ? '<button class="timeline-food-btn" type="button" data-action="show-food-pref" data-char-id="' + escapeAttr(profile.id || "") + '">ℹ️ 食物喜好</button>'
+        : "";
       const hasAdultSpouse = stage === "adult" && gen.spouseCharacterId && gen.spouseCharacterId !== "none";
       if (hasAdultSpouse) {
         const spouseProfile = getProfileById(gen.spouseCharacterId);
@@ -915,13 +943,24 @@ function renderTimeline() {
           '<div class="' + spouseNameClass + '">' + escapeHtml(spouseNameWithRank) + "</div>" +
           "</div>" +
           "</div>" +
-          foodHover;
+          foodHover +
+          foodButton;
       } else {
         cell.innerHTML =
           '<strong>' + stageName + '</strong>' +
           charImage +
           '<div class="' + nameClass + '">' + escapeHtml(nameWithRank) + '</div>' +
-          foodHover;
+          foodHover +
+          foodButton;
+      }
+      const foodBtn = cell.querySelector("[data-action='show-food-pref']");
+      if (foodBtn) {
+        foodBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const charId = foodBtn.getAttribute("data-char-id") || "";
+          const targetProfile = getProfileById(charId) || profile;
+          openTimelineFoodModal(targetProfile);
+        });
       }
       cell.addEventListener("click", () => {
         createDraftFromRecord(gen, stage);
@@ -1186,6 +1225,8 @@ function renderCharacterLibrary() {
     const parityOk = !parity || parity === "all" || c.parity === parity;
     return keywordOk && stageOk && rankOk && parityOk;
   }).slice().sort((a, b) => {
+    const rankDiff = rankOrderValue(a.rank) - rankOrderValue(b.rank);
+    if (rankDiff !== 0) return rankDiff;
     const stageDiff = stageOrderValue(a.stage) - stageOrderValue(b.stage);
     if (stageDiff !== 0) return stageDiff;
     return String(a.id).localeCompare(String(b.id));
@@ -1198,6 +1239,7 @@ function renderCharacterLibrary() {
 
   filtered.forEach((char) => {
     const chineseName = getCharacterChineseName(char) || char.name;
+    const rankMeta = getRankPillMeta(char.rank);
     const likedFoods = resolveFoodPreferenceList(char.favoriteFoodIds, char.favoriteFoods);
     const dislikedFoods = resolveFoodPreferenceList(char.dislikedFoodIds, char.dislikedFoods);
     const toFoodRows = (title, foods) => {
@@ -1217,7 +1259,7 @@ function renderCharacterLibrary() {
         ? '<img class="thumb" src="' + escapeAttr(char.image) + '" alt="图" />'
         : '<div class="thumb empty">角色</div>') +
       '<div class="name-block"><strong>' + escapeHtml(chineseName) + '</strong><div class="hint name-en-hint">' + escapeHtml(char.name) + '</div></div>' +
-      '<span class="rank-pill">' + escapeHtml(formatRankLabel(char.rank || "-")) + "</span>" +
+      '<span class="rank-pill ' + rankMeta.cls + '">' + escapeHtml(rankMeta.label) + "</span>" +
       '</div>' +
       '<div class="char-meta">阶段: ' + STAGE_LABEL[char.stage] + ' ｜ 奇偶: ' + formatAnyLabel(char.parity) + "</div>" +
       toFoodRows("喜欢", likedFoods) +
@@ -1261,13 +1303,17 @@ function renderItemLibrary() {
     const sourceLine = "来源：" + sourceText + (codeText ? " ｜ 代码：" + codeText : "");
     const noteText = String(item.note || "").trim();
     const noteHtml = noteText ? ('<div class="hint item-note">' + escapeHtml(noteText) + '</div>') : "";
+    const usageMeta = getUsagePillMeta(item.usageMode);
+    const usagePillHtml = usageMeta
+      ? ('<span class="usage-pill ' + usageMeta.cls + '">' + escapeHtml(usageMeta.label) + "</span>")
+      : "";
     const card = document.createElement("article");
     card.className = "item-card";
     card.innerHTML =
       '<div class="item-head">' +
       renderItemThumbHtml(item, "thumb food-library-thumb", "道具图") +
       '<div class="name-block"><strong>' + escapeHtml(item.nameZh || item.name || "-") + (item.isRecommended ? " ⭐" : "") + '</strong><div class="hint name-en-hint">' + escapeHtml(item.name || "-") + '</div></div>' +
-      '<span class="usage-pill">' + escapeHtml(formatItemUsageLabel(item.usageMode)) + "</span>" +
+      usagePillHtml +
       '</div>' +
       '<div class="food-price">价格：' + (item.price ?? "-") + '</div>' +
       '<div class="hint">可用阶段：' + escapeHtml(stageText) + '</div>' +
@@ -1280,6 +1326,31 @@ function renderItemLibrary() {
 
 function normalizeText(text) {
   return String(text || "").trim().toLowerCase();
+}
+
+function getRankPillMeta(rank) {
+  const raw = normalizeText(rank);
+  if (raw === "s") return { cls: "pill-tone-s", label: "S" };
+  if (raw === "a") return { cls: "pill-tone-a", label: "A" };
+  if (raw === "b") return { cls: "pill-tone-b", label: "B" };
+  if (raw === "c") return { cls: "pill-tone-c", label: "C" };
+  if (raw === "d") return { cls: "pill-tone-d", label: "D" };
+  return { cls: "pill-tone-n", label: "N" };
+}
+
+function getUsagePillMeta(mode) {
+  const raw = normalizeText(mode);
+  if (raw === "single_use") return { cls: "pill-tone-s", label: "一次性" };
+  if (raw === "breakable") return { cls: "pill-tone-b", label: "几率毁坏" };
+  if (raw === "permanent") return { cls: "pill-tone-c", label: "永久" };
+  return null;
+}
+
+function getCategoryPillMeta(category) {
+  const raw = normalizeText(category);
+  if (raw === "snack") return { cls: "pill-tone-s", label: "Snack" };
+  if (raw === "food") return { cls: "pill-tone-c", label: "Food" };
+  return null;
 }
 
 function formatFoodCategoryLabel(category) {
@@ -1634,6 +1705,10 @@ function renderFoodLibrary() {
     const sourceText = extractCanonicalSources(parseFoodSources(food.source), "food").join(" / ") || "未分类";
     const codeText = String(food.code || "").trim();
     const sourceLine = "来源：" + sourceText + (codeText ? " ｜ 代码：" + codeText : "");
+    const categoryMeta = getCategoryPillMeta(food.category);
+    const categoryPillHtml = categoryMeta
+      ? ('<span class="category-pill ' + categoryMeta.cls + '">' + escapeHtml(categoryMeta.label) + "</span>")
+      : "";
     const renderRelationRows = (rows) => {
       if (!rows.length) {
         return '<div class="char-link-item"><span>-</span></div>';
@@ -1651,7 +1726,7 @@ function renderFoodLibrary() {
       '<div class="item-head">' +
       renderFoodThumbHtml(food, "thumb food-library-thumb", "图", "thumb food-library-thumb") +
       '<div class="food-name-inline"><strong>' + escapeHtml(food.chinese || "-") + '</strong><span class="hint">' + escapeHtml(food.english || "-") + "</span></div>" +
-      '<span class="category-pill">' + escapeHtml(formatFoodCategoryLabel(food.category)) + '</span>' +
+      categoryPillHtml +
       '</div>' +
       '<div class="food-price">价格：' + (food.price ?? "-") + "</div>" +
       '<div class="hint">' + escapeHtml(sourceLine) + '</div>' +
@@ -1669,7 +1744,7 @@ function renderRulesFaq() {
   box.innerHTML = "";
   state.faq.forEach((entry) => {
     const details = document.createElement("details");
-    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p class="hint" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + '</p>';
+    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p class="hint faq-answer" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + '</p>';
     box.appendChild(details);
   });
 }
@@ -1718,6 +1793,27 @@ function openFoodModal(food, relation) {
 
 function closeModal() {
   document.getElementById("detailModalMask").classList.remove("open");
+}
+
+function openTimelineFoodModal(profile) {
+  const titleEl = document.getElementById("timelineFoodModalTitle");
+  const bodyEl = document.getElementById("timelineFoodModalBody");
+  const displayName = profile ? getCharacterDisplayName(profile) : "未记录";
+  titleEl.textContent = displayName + " 的食物喜好";
+  bodyEl.innerHTML = renderTimelineFoodPanel(profile);
+  document.getElementById("timelineFoodModalMask").classList.add("open");
+}
+
+function closeTimelineFoodModal() {
+  document.getElementById("timelineFoodModalMask").classList.remove("open");
+}
+
+function openContactModal() {
+  document.getElementById("contactModalMask").classList.add("open");
+}
+
+function closeContactModal() {
+  document.getElementById("contactModalMask").classList.remove("open");
 }
 
 function showStatus(id, text, isWarn) {
@@ -1916,16 +2012,21 @@ function bindEvents() {
   document.getElementById("selectorModalMask").addEventListener("click", (event) => {
     if (event.target.id === "selectorModalMask") closeSelectorModal();
   });
+  document.getElementById("closeTimelineFoodModalBtn").addEventListener("click", closeTimelineFoodModal);
+  document.getElementById("timelineFoodModalMask").addEventListener("click", (event) => {
+    if (event.target.id === "timelineFoodModalMask") closeTimelineFoodModal();
+  });
+  document.getElementById("openContactModalBtn").addEventListener("click", openContactModal);
+  document.getElementById("closeContactModalBtn").addEventListener("click", closeContactModal);
+  document.getElementById("contactModalMask").addEventListener("click", (event) => {
+    if (event.target.id === "contactModalMask") closeContactModal();
+  });
 }
 
 function init() {
   loadState();
   renderTabs();
   openTab(state.activeTab);
-  const stageFilter = document.getElementById("charStageFilter");
-  if (stageFilter) {
-    stageFilter.value = currentStage();
-  }
   const parityFilter = document.getElementById("charParityFilter");
   if (parityFilter) {
     parityFilter.value = "";
