@@ -1786,7 +1786,19 @@ function renderRulesFaq() {
   box.innerHTML = "";
   state.faq.forEach((entry) => {
     const details = document.createElement("details");
-    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p class="hint faq-answer" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + '</p>';
+    const downloads = Array.isArray(entry.downloads) ? entry.downloads : [];
+    const downloadHtml = downloads.length
+      ? (
+        '<div class="faq-downloads">' +
+        downloads.map((item) => {
+          const label = escapeHtml(item && item.label ? item.label : "下载文件");
+          const href = escapeAttr(item && item.href ? item.href : "#");
+          return '<a class="faq-download-link" href="' + href + '" download target="_blank" rel="noopener noreferrer">' + label + "</a>";
+        }).join("") +
+        "</div>"
+      )
+      : "";
+    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p class="hint faq-answer" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + "</p>" + downloadHtml;
     box.appendChild(details);
   });
 }
