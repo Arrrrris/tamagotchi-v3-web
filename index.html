@@ -4,9 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tamagotchi Connection V3 家庭图谱记录工具</title>
+  <meta name="asset-version" content="2026.02.27.172655" />
   <link rel="icon" type="image/png" href="./favicon.png" />
   <link rel="shortcut icon" href="./favicon.png" />
-  <link rel="stylesheet" href="./tamagotchi-v3-family.css" />
+  <script>
+    (function loadCssWithVersion() {
+      var version = document.querySelector('meta[name="asset-version"]').content;
+      var cssLink = document.createElement("link");
+      cssLink.rel = "stylesheet";
+      cssLink.href = "./tamagotchi-v3-family.css?v=" + encodeURIComponent(version);
+      document.head.appendChild(cssLink);
+    })();
+  </script>
 </head>
 <body>
   <main class="wrap">
@@ -263,10 +272,23 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script src="./tamagotchi-v3-data-characters.js"></script>
-  <script src="./tamagotchi-v3-data-items.js"></script>
-  <script src="./tamagotchi-v3-data-foods.js"></script>
-  <script src="./tamagotchi-v3-data-faq.js"></script>
-  <script src="./tamagotchi-v3-family-main.js"></script>
+  <script>
+    (function loadScriptsWithVersion() {
+      var version = document.querySelector('meta[name="asset-version"]').content;
+      var scripts = [
+        "./tamagotchi-v3-data-characters.js",
+        "./tamagotchi-v3-data-items.js",
+        "./tamagotchi-v3-data-foods.js",
+        "./tamagotchi-v3-data-faq.js",
+        "./tamagotchi-v3-family-main.js"
+      ];
+
+      scripts.forEach(function (src) {
+        var script = document.createElement("script");
+        script.src = src + "?v=" + encodeURIComponent(version);
+        document.body.appendChild(script);
+      });
+    })();
+  </script>
 </body>
 </html>

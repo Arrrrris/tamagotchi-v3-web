@@ -63,3 +63,35 @@ https://tamagotchi-tools.cc
 并不懂编程纯纯vibe出来的屎山，瞎用着吧
 - 欢迎反馈 bug、补充资料、提出改进建议
 - 页面内“联系我”按钮可查看联系方式
+```
+
+## 发布时缓存更新（Cloudflare Pages）
+
+为避免浏览器缓存旧版 JS/CSS，本项目使用统一版本号（查询参数）机制：
+
+- 版本号位置：`index.html` 的 `<meta name="asset-version" content="...">`
+- 资源引用方式：`index.html` 会自动给本地 CSS/JS 追加 `?v=版本号`
+
+### 发版步骤（每次都做）
+
+在项目根目录执行：
+
+```bash
+./bump-asset-version.sh
+git add index.html
+git commit -m "chore: bump asset version"
+git push
+```
+
+可选：手动指定版本号（推荐语义化/可读格式）：
+
+```bash
+./bump-asset-version.sh 2026.02.27.2
+```
+
+### 版本号规则建议
+
+- 只要影响页面资源（`*.js`、`*.css`、静态文案逻辑）就必须升版
+- 同一天多次发布，递增末尾序号（如 `2026.02.27.1` -> `2026.02.27.2`）
+- 不要回退版本号，始终单调递增
+- 一次发布只使用一个统一版本号
