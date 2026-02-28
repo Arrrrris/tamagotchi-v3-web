@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tamagotchi Connection V3 家庭图谱记录工具</title>
-  <meta name="asset-version" content="2026.02.27.172655" />
+  <meta name="asset-version" content="2026.02.28.112903" />
   <link rel="icon" type="image/png" href="./favicon.png" />
   <link rel="shortcut icon" href="./favicon.png" />
   <script>
@@ -209,25 +209,11 @@
     </section>
 
     <section class="panel" id="panel-rules">
-      <div class="big-card">
-        <h3 style="margin-top:0;margin-bottom:8px;">小工具使用简介</h3>
-        <p class="hint">记录拓麻V3家谱与成长，支持资料查询和Excel导出 <br />进入【家谱图谱页】按阶段选择角色并保存（幼儿期→老年期），成年期可补配偶，时间线自动记录</p>
-      </div>
+      <div class="big-card" id="rulesIntroCard"></div>
 
       <div class="faq-list" id="rulesFaq"></div>
 
-      <div class="big-card" style="margin-top:10px;">
-        <h3 style="margin-top:0;margin-bottom:8px;">等待更新…</h3>
-        <ol style="margin:0; padding-left:18px; color:#334155; line-height:1.8;">
-          <li class="hint">后续更新内容，现在还没准备好</li>
-          <li class="hint">结婚攻略（老奶攻略）</li>
-          <li class="hint">商店老头刷新时间</li>
-          <li class="hint">各个游戏攻略和回报率（不是</li>
-          <li class="hint">商店代码开启方式</li>
-          <li class="hint">睡觉时间和教育时间？</li>
-          <li class="hint">还有啥，我也不知道了</li>
-        </ol>
-      </div>
+      <div class="big-card" id="rulesTodoCard" style="margin-top:10px;"></div>
 
       <div style="margin-top:10px; text-align:center;">
         <button class="contact-open-btn" id="openContactModalBtn" type="button">联系我</button>

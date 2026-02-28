@@ -20,6 +20,7 @@ const tabs = [
 ];
 const FOOD_IMAGE_DIR = "./food-icons";
 const ITEM_IMAGE_DIR = "./item-icons";
+const SOUVENIR_IMAGE_DIR = "./souvenir-icons";
 const FOOD_SOURCE_FILTER_OPTIONS = ["商店", "代码", "老头"];
 const ITEM_SOURCE_FILTER_OPTIONS = ["商店", "代码", "老头", "神灯/宝箱"];
 
@@ -31,6 +32,8 @@ const state = {
   characters: characterProfiles,
   items: normalizeItemLibrary(itemLibrary),
   foods: normalizeFoodLibrary(foodLibrary),
+  rulesIntro: rulesIntroSeed,
+  rulesTodo: rulesTodoSeed,
   faq: faqSeed,
   selectorModal: {
     mode: "",
@@ -1528,6 +1531,20 @@ function buildItemImagePath(itemId, ext = "png") {
   return ITEM_IMAGE_DIR + "/" + id + "." + ext;
 }
 
+function buildSouvenirImagePath(souvenirId, ext = "png") {
+  const id = String(souvenirId || "").trim();
+  if (!id) return "";
+  return SOUVENIR_IMAGE_DIR + "/" + id + "." + ext;
+}
+
+function renderSouvenirThumbHtml(souvenirId, className, altText) {
+  const id = String(souvenirId || "").trim();
+  if (!id) return '<span class="hint">-</span>';
+  const webp = buildSouvenirImagePath(id, "webp");
+  const png = buildSouvenirImagePath(id, "png");
+  return '<picture><source srcset="' + escapeAttr(webp) + '" type="image/webp" /><img class="' + escapeAttr(className) + '" src="' + escapeAttr(png) + '" alt="' + escapeAttr(altText) + '" /></picture>';
+}
+
 function renderItemThumbHtml(item, className, altText) {
   const manualImage = String(item && item.image ? item.image : "").trim();
   const itemId = String(item && item.id ? item.id : "").trim();
@@ -1782,11 +1799,27 @@ function renderFoodLibrary() {
 }
 
 function renderRulesFaq() {
+  const introCard = document.getElementById("rulesIntroCard");
+  if (introCard) {
+    const intro = state.rulesIntro || {};
+    const introTitle = String(intro.title || "").trim() || "小工具使用简介";
+    const introDesc = String(intro.desc || "").trim();
+    const introDescHtml = introDesc
+      ? escapeHtml(introDesc).replace(/\n/g, "<br />")
+      : "暂无说明";
+    introCard.innerHTML =
+      '<h3 style="margin-top:0;margin-bottom:8px;">' + escapeHtml(introTitle) + "</h3>" +
+      '<p class="hint">' + introDescHtml + "</p>";
+  }
+
   const box = document.getElementById("rulesFaq");
   box.innerHTML = "";
   state.faq.forEach((entry) => {
     const details = document.createElement("details");
     const downloads = Array.isArray(entry.downloads) ? entry.downloads : [];
+    const table = entry && entry.table ? entry.table : null;
+    const headers = table && Array.isArray(table.headers) ? table.headers : [];
+    const rows = table && Array.isArray(table.rows) ? table.rows : [];
     const downloadHtml = downloads.length
       ? (
         '<div class="faq-downloads">' +
@@ -1798,9 +1831,77 @@ function renderRulesFaq() {
         "</div>"
       )
       : "";
-    details.innerHTML = '<summary>' + escapeHtml(entry.q) + '</summary><p class="hint faq-answer" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + "</p>" + downloadHtml;
+    const tableHtml = (headers.length && rows.length)
+      ? (
+        '<div class="faq-table-wrap">' +
+        '<table class="faq-table">' +
+        "<thead><tr>" + headers.map((header) => "<th>" + escapeHtml(header) + "</th>").join("") + "</tr></thead>" +
+        "<tbody>" + rows.map((row) => {
+          const cells = Array.isArray(row) ? row : [];
+          return "<tr>" + headers.map((_, idx) => {
+            const rawValue = cells[idx];
+            if (rawValue && typeof rawValue === "object" && !Array.isArray(rawValue)) {
+              if (rawValue.type === "item-name") {
+                const itemId = String(rawValue.itemId || "").trim();
+                const item = state.items.find((entry) => String(entry.id || "").trim() === itemId);
+                const itemName = item ? (item.nameZh || item.name || "") : "";
+                const nameText = itemName.trim() ? itemName : "-";
+                const nameClass = itemName.trim() ? "" : ' class="faq-table-placeholder"';
+                return "<td" + nameClass + ">" + escapeHtml(nameText) + "</td>";
+              }
+              if (rawValue.type === "item-image") {
+                const itemId = String(rawValue.itemId || "").trim();
+                const item = state.items.find((entry) => String(entry.id || "").trim() === itemId);
+                if (!item) {
+                  return '<td class="faq-table-placeholder">-</td>';
+                }
+                const imgHtml = renderItemThumbHtml(item, "faq-table-thumb", "票图片");
+                return '<td class="faq-table-image-cell">' + imgHtml + "</td>";
+              }
+              if (rawValue.type === "souvenir-image") {
+                const souvenirId = String(rawValue.souvenirId || "").trim();
+                if (!souvenirId) {
+                  return '<td class="faq-table-placeholder">-</td>';
+                }
+                const imgHtml = renderSouvenirThumbHtml(souvenirId, "faq-table-thumb", "纪念品图片");
+                return '<td class="faq-table-image-cell">' + imgHtml + "</td>";
+              }
+            }
+            const text = rawValue === null || rawValue === undefined ? "" : String(rawValue);
+            const hasValue = !!text.trim();
+            const displayText = hasValue ? text : "-";
+            const placeholderClass = hasValue ? "" : ' class="faq-table-placeholder"';
+            return "<td" + placeholderClass + ">" + escapeHtml(displayText) + "</td>";
+          }).join("") + "</tr>";
+        }).join("") + "</tbody>" +
+        "</table>" +
+        "</div>"
+      )
+      : "";
+    details.innerHTML =
+      '<summary>' + escapeHtml(entry.q) + '</summary>' +
+      '<p class="hint faq-answer" style="margin:8px 0 0; line-height:1.7;">' + escapeHtml(entry.a) + "</p>" +
+      tableHtml +
+      downloadHtml;
     box.appendChild(details);
   });
+
+  const todoCard = document.getElementById("rulesTodoCard");
+  if (todoCard) {
+    const todo = state.rulesTodo || {};
+    const todoTitle = String(todo.title || "").trim() || "等待更新…";
+    const todoItems = Array.isArray(todo.items) ? todo.items : [];
+    const listHtml = todoItems.length
+      ? (
+        '<ol style="margin:0; padding-left:18px; color:#334155; line-height:1.8;">' +
+        todoItems.map((item) => '<li class="hint">' + escapeHtml(item) + "</li>").join("") +
+        "</ol>"
+      )
+      : '<p class="hint" style="margin:0;">暂无待更新内容</p>';
+    todoCard.innerHTML =
+      '<h3 style="margin-top:0;margin-bottom:8px;">' + escapeHtml(todoTitle) + "</h3>" +
+      listHtml;
+  }
 }
 
 function openProfileModal(profile) {
@@ -1912,12 +2013,26 @@ function setFilterCollapsedState(card, toggleBtn, collapsed) {
 function bindFilterToggle(toggleId, cardSelector) {
   const toggleBtn = document.getElementById(toggleId);
   const card = document.querySelector(cardSelector);
+  const filterHead = card ? card.querySelector(".filter-head") : null;
   if (!toggleBtn || !card) return;
-  toggleBtn.addEventListener("click", () => {
+
+  const toggleCollapsed = () => {
     if (!isMobileViewport()) return;
     const collapsed = !card.classList.contains("is-collapsed");
     setFilterCollapsedState(card, toggleBtn, collapsed);
+  };
+
+  toggleBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleCollapsed();
   });
+
+  if (filterHead) {
+    filterHead.addEventListener("click", (event) => {
+      if (event.target && event.target.closest(".filter-toggle-btn")) return;
+      toggleCollapsed();
+    });
+  }
 }
 
 function syncFilterPanelsForViewport() {
